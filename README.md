@@ -43,7 +43,7 @@ By default on startup, `syntect_server` will list all features (themes + file ty
 
 ## Development
 
-1. [Install Rust **nightly**](https://rocket.rs/guide/getting-started/#installing-rust).
+1. [Install Rust](https://rustup.rs/).
 2. `git clone` this repository anywhere on your filesystem.
 3. Use `cargo run` to download dependencies + compile + run the server.
 
