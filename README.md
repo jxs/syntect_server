@@ -7,7 +7,6 @@ Technologies:
 - [Syntect](https://github.com/trishume/syntect) -> Syntax highlighting of code.
 - [Rocket.rs](https://rocket.rs) -> Web framework.
 - [Serde](https://serde.rs/) -> JSON serialization / deserialization .
-- [Rayon](https://github.com/nikomatsakis/rayon) -> data parallelism for `SyntaxSet` across Rocket server threads.
 - [lazy_static](https://crates.io/crates/lazy_static) -> lazily evaluated static `ThemeSet` (like a global).
 
 ## Usage

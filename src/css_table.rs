@@ -235,6 +235,7 @@ impl<'a> fmt::Display for Escape<'a> {
 #[cfg(test)]
 mod tests {
     use crate::{highlight, Query};
+    use rocket_contrib::json;
 
     fn test_css_table_highlight(q: Query, expected: &str) {
         let result = highlight(q);

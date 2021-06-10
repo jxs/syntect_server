@@ -1,21 +1,14 @@
-#![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
-
-#[macro_use]
-extern crate lazy_static;
-extern crate rayon;
-#[macro_use]
-extern crate rocket;
-#[macro_use]
-extern crate rocket_contrib;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate syntect;
-
-use rocket_contrib::json::{Json, JsonValue};
 use std::env;
 use std::panic;
 use std::path::Path;
+
+use lazy_static::lazy_static;
+use rocket::{catch, catchers, get, launch, post, routes};
+use rocket_contrib::{
+    json,
+    json::{Json, JsonValue},
+};
+use serde::Deserialize;
 use syntect::{
     highlighting::ThemeSet,
     html::{highlighted_html_for_string, ClassStyle},
