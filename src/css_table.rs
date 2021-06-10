@@ -61,9 +61,9 @@ impl<'a> ClassedTableGenerator<'a> {
         for (i, line) in LinesWithEndings::from(self.code).enumerate() {
             open_row(&mut self.html, i);
             if self.max_line_len.map_or(false, |n| line.len() > n) {
-                self.write_escaped_html(&line);
+                self.write_escaped_html(line);
             } else {
-                self.write_spans_for_line(&line);
+                self.write_spans_for_line(line);
             }
             close_row(&mut self.html);
         }
@@ -156,10 +156,10 @@ impl<'a> ClassedTableGenerator<'a> {
             let atom = scope.atom_at(i as usize);
             let atom_s = repo.atom_str(atom);
             if i != 0 {
-                self.html.push_str(" ")
+                self.html.push(' ')
             }
             if let ClassStyle::SpacedPrefixed { prefix } = self.style {
-                self.html.push_str(&prefix)
+                self.html.push_str(prefix)
             }
             self.html.push_str(atom_s);
         }

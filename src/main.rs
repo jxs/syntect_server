@@ -68,7 +68,7 @@ fn highlight(q: Query) -> JsonValue {
     SYNTAX_SET.with(|syntax_set| {
         // Determine syntax definition by extension.
         let mut is_plaintext = false;
-        let syntax_def = if q.filepath == "" {
+        let syntax_def = if q.filepath.is_empty() {
             // Legacy codepath, kept for backwards-compatability with old clients.
             match syntax_set.find_syntax_by_extension(&q.extension) {
                 Some(v) => v,
@@ -111,8 +111,8 @@ fn highlight(q: Query) -> JsonValue {
 
         if q.css {
             let output = ClassedTableGenerator::new(
-                &syntax_set,
-                &syntax_def,
+                syntax_set,
+                syntax_def,
                 &q.code,
                 q.line_length_limit,
                 ClassStyle::SpacedPrefixed { prefix: "hl-" },
@@ -137,7 +137,7 @@ fn highlight(q: Query) -> JsonValue {
             };
 
             json!({
-                "data": highlighted_html_for_string(&q.code, &syntax_set, &syntax_def, theme),
+                "data": highlighted_html_for_string(&q.code, syntax_set, syntax_def, theme),
                 "plaintext": is_plaintext,
             })
         }
@@ -157,20 +157,20 @@ fn not_found() -> JsonValue {
 fn list_features() {
     // List embedded themes.
     println!("## Embedded themes:");
-    println!("");
+    println!();
     for t in THEME_SET.themes.keys() {
         println!("- `{}`", t);
     }
-    println!("");
+    println!();
 
     // List supported file extensions.
     SYNTAX_SET.with(|syntax_set| {
         println!("## Supported file extensions:");
-        println!("");
+        println!();
         for sd in syntax_set.syntaxes() {
             println!("- {} (`{}`)", sd.name, sd.file_extensions.join("`, `"));
         }
-        println!("");
+        println!();
     });
 }
 
