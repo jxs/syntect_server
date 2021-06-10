@@ -7,8 +7,10 @@ license = "MIT"
 
 [dependencies]
 syntect = { git = "https://github.com/slimsag/syntect" }
-rocket = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.0"
+warp = { git = "https://github.com/seanmonstar/warp" }
+tokio = { version = "1.6.1", features = ["full"] }
+tracing = "0.1.26"
+tracing-subscriber = "0.2.18"

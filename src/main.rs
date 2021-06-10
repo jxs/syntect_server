@@ -3,17 +3,15 @@ use std::panic;
 use std::path::Path;
 
 use lazy_static::lazy_static;
-use rocket::{catch, catchers, get, launch, post, routes};
-use rocket_contrib::{
-    json,
-    json::{Json, JsonValue},
-};
 use serde::Deserialize;
+use serde_json::{json, Value};
 use syntect::{
     highlighting::ThemeSet,
     html::{highlighted_html_for_string, ClassStyle},
     parsing::SyntaxSet,
 };
+use tracing_subscriber::fmt::format::FmtSpan;
+use warp::{reply::Json, Filter, Rejection};
 
 mod css_table;
 use css_table::ClassedTableGenerator;
@@ -26,7 +24,7 @@ lazy_static! {
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Query {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.
@@ -51,22 +49,30 @@ struct Query {
     code: String,
 }
 
-#[post("/", format = "application/json", data = "<q>")]
-fn index(q: Json<Query>) -> JsonValue {
+async fn highlight_handler(q: Query) -> Result<Json, Rejection> {
+    tracing::info!(extension = %q.extension, filepath = %q.filepath, code_len = q.code.len());
     // TODO(slimsag): In an ideal world we wouldn't be relying on catch_unwind
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
-    let result = panic::catch_unwind(|| highlight(q.into_inner()));
+    // tracing::info!("highlight", "query = {:?}", q);
+    let result = panic::catch_unwind(|| highlight(&q));
     match result {
-        Ok(v) => v,
-        Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
+        Err(err) => {
+            tracing::error!(backtrace = ?err);
+            Ok(warp::reply::json(
+                &json!({"error": "panic while highlighting code", "code": "panic"}),
+            ))
+        }
+        Ok(v) => Ok(warp::reply::json(&v)),
     }
 }
 
-fn highlight(q: Query) -> JsonValue {
+fn highlight(q: &Query) -> Value {
+    panic!("in the streets of london");
     SYNTAX_SET.with(|syntax_set| {
         // Determine syntax definition by extension.
+        // panic!("cenas");
         let mut is_plaintext = false;
         let syntax_def = if q.filepath.is_empty() {
             // Legacy codepath, kept for backwards-compatability with old clients.
@@ -144,14 +150,15 @@ fn highlight(q: Query) -> JsonValue {
     })
 }
 
-#[get("/health")]
-fn health() -> &'static str {
-    "OK"
-}
-
-#[catch(404)]
-fn not_found() -> JsonValue {
-    json!({"error": "resource not found", "code": "resource_not_found"})
+async fn handle_rejection(err: Rejection) -> Result<Json, Rejection> {
+    if err.is_not_found() {
+        Ok(warp::reply::json(
+            &json!({"error": "resource not found", "code": "resource_not_found"}),
+        ))
+    } else {
+        tracing::error!(reason = ?err);
+        Err(err)
+    }
 }
 
 fn list_features() {
@@ -174,9 +181,9 @@ fn list_features() {
     });
 }
 
-#[launch]
-fn rocket() -> rocket::Rocket {
-    // Only list features if QUIET != "true"
+#[tokio::main]
+async fn main() {
+    let filter = env::var("RUST_LOG").unwrap_or_else(|_| "info,warp=debug".to_owned());
     match env::var("QUIET") {
         Ok(v) => {
             if v != "true" {
@@ -186,7 +193,24 @@ fn rocket() -> rocket::Rocket {
         Err(_) => list_features(),
     };
 
-    rocket::ignite()
-        .mount("/", routes![index, health])
-        .register(catchers![not_found])
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_span_events(FmtSpan::CLOSE)
+        .init();
+
+    let highlight = warp::path::end()
+        .and(warp::post())
+        .and(warp::body::json())
+        .and_then(highlight_handler)
+        .with(warp::trace::named("highlight"));
+
+    let health = warp::path!("health")
+        .map(|| "OK")
+        .with(warp::trace::named("health"));
+
+    let routes = highlight
+        .or(health)
+        .recover(handle_rejection)
+        .with(warp::trace::request());
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
